@@ -89,7 +89,11 @@ class ndarray(np.ndarray):
 			out_arr.axis_data = tuple(out_data)
 		return out_arr
 
+	def _resolve_axis(self, axis):
+		return axis
+
 	def sum(self, axis=None, dtype=None, out=None, keepdims=False):
+		axis = self._resolve_axis(axis)
 		res = super().sum(axis, dtype, out, keepdims)
 		if out is None:
 			res = res.view(ndarray)
@@ -112,6 +116,9 @@ class ndarray(np.ndarray):
 			axes = None
 		elif len(axes) == 1 and not isinstance(axes[0], int):
 			axes = axes[0]
+
+		if axes is not None:
+			axes = [self._resolve_axis(ax) for ax in axes]
 
 		res = super().transpose(axes)
 		if axes is None:

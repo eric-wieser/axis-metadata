@@ -75,4 +75,17 @@ class TestEverything(unittest.TestCase):
 		xa = aarray(x, ['a', 'b', 'c'])
 		self.assertEqual((xa + xa).axis_data, xa.axis_data)
 
+class TestSubclassing(unittest.TestCase):
+	def test_it(self):
+		class NamedAxisArray(aarray):
+			def _resolve_axis(self, axis):
+				if axis is not None and not isinstance(axis, int):
+					axis = self.axis_data.index(axis)
+				return axis
+
+		x = np.empty((2, 4, 5))
+		xa = NamedAxisArray(x, ['a', 'b', 'c'])
+		self.assertEqual(xa.sum(axis='b').axis_data, ('a', 'c'))
+
+
 unittest.main()
