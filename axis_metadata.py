@@ -61,6 +61,24 @@ class ndarray(np.ndarray):
 		else:
 			self.axis_data = (None,) * self.ndim
 
+	def sum(self, axis=None, dtype=None, out=None, keepdims=False):
+		res = super().sum(axis, dtype, out, keepdims)
+		if out is None:
+			res = res.view(ndarray)
+		if isinstance(res, ndarray):
+			if not keepdims:
+				if isinstance(axis, int):
+					axis = (axis,)
+				if isinstance(axis, tuple):
+					res.axis_data = tuple(self.axis_data[i] for i in range(self.ndim) if i not in axis)
+				elif isinstance(axis, None):
+					pass
+				else:
+					raise NotImplementedError
+			else:
+				res.axis_data = self.axis_data
+		return res
+
 	def transpose(self, *axes):
 		if len(axes) == 0:
 			axes = None

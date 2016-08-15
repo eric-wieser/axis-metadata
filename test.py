@@ -53,4 +53,14 @@ class TestEverything(unittest.TestCase):
 
 		self.assertEqual(xa.ravel().axis_data, (None,))
 
+	def test_sum(self):
+		x = np.empty((2, 4, 5))
+		xa = aarray(x, ['a', 'b', 'c'])
+		self.assertEqual(xa.sum(axis=1).axis_data, ('a', 'c'))
+		self.assertEqual(xa.sum(axis=(1,)).axis_data, ('a', 'c'))
+		self.assertEqual(xa.sum(axis=(1,2)).axis_data, ('a',))
+		self.assertEqual(xa.sum(axis=(1,), keepdims=True).axis_data, xa.axis_data)
+		self.assertEqual(xa.sum(axis=(1,2), keepdims=True).axis_data, xa.axis_data)
+		self.assertEqual(xa.sum(keepdims=True).axis_data, xa.axis_data)
+
 unittest.main()
