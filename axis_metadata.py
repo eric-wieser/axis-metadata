@@ -32,6 +32,21 @@ def resolve_slice(tup, ndim):
 		yield np.s_[:], i
 		i = i + 1
 
+def broadcast_tuples(ts):
+	n = max(len(t) for t in ts)
+	return [(None,) * (n - len(t)) + t for t in ts]
+
+def same_ignoring_nones(ts):
+	seen = None
+	for t in ts:
+		if t is not None:
+			if seen is not None:
+				if seen != t:
+					raise ValueError
+			else:
+				seen = t
+
+	return seen
 
 class ndarray(np.ndarray):
 	def __new__(cls, array, axis_data):
@@ -48,7 +63,8 @@ class ndarray(np.ndarray):
 			if isinstance(key, slice) or i is None
 		)
 		res = super().__getitem__(item)
-		res.axis_data = keep
+		if isinstance(res, ndarray):
+			res.axis_data = keep
 		return res
 
 	def __array_finalize__(self, obj):
@@ -60,6 +76,18 @@ class ndarray(np.ndarray):
 
 		else:
 			self.axis_data = (None,) * self.ndim
+
+	def __array_prepare__(self, out_arr, context=None):
+		out_arr = out_arr.view(type(self))
+
+		if context is not None:
+			func, args, domain = context
+			data = [arg.axis_data for arg in args if isinstance(arg, ndarray)]
+			out_data = list(out_arr.axis_data)
+			for i, axis_items in enumerate(zip(*broadcast_tuples(data))):
+				out_data[i] = same_ignoring_nones(axis_items)
+			out_arr.axis_data = tuple(out_data)
+		return out_arr
 
 	def sum(self, axis=None, dtype=None, out=None, keepdims=False):
 		res = super().sum(axis, dtype, out, keepdims)

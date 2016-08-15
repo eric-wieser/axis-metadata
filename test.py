@@ -1,15 +1,22 @@
 import unittest
 import numpy as np
 from axis_metadata import ndarray as aarray
-from axis_metadata import resolve_slice
+from axis_metadata import resolve_slice, broadcast_tuples, same_ignoring_nones
 
 class TestEverything(unittest.TestCase):
 	def test_resolve(self):
-
 		self.assertSequenceEqual(
 			list(resolve_slice(np.s_[0,...,3], 4)),
 			list(zip(np.s_[0,:,:,3], np.arange(4)))
 		)
+		self.assertSequenceEqual(
+			broadcast_tuples([(1,), (1, 2), (1, 2, 3)]), [(None, None, 1), (None, 1, 2), (1, 2, 3)]
+		)
+
+		self.assertEqual(same_ignoring_nones((1, None, 1, None)), 1)
+		self.assertEqual(same_ignoring_nones((None, 1, None)), 1)
+		with self.assertRaises(ValueError):
+			same_ignoring_nones((None, 1, 2))
 
 	def test_slicing(self):
 		x = np.empty((2, 4, 5))
@@ -62,5 +69,10 @@ class TestEverything(unittest.TestCase):
 		self.assertEqual(xa.sum(axis=(1,), keepdims=True).axis_data, xa.axis_data)
 		self.assertEqual(xa.sum(axis=(1,2), keepdims=True).axis_data, xa.axis_data)
 		self.assertEqual(xa.sum(keepdims=True).axis_data, xa.axis_data)
+
+	def test_add(self):
+		x = np.empty((2, 4, 5))
+		xa = aarray(x, ['a', 'b', 'c'])
+		self.assertEqual((xa + xa).axis_data, xa.axis_data)
 
 unittest.main()
